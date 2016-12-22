@@ -13,6 +13,7 @@ namespace Xamarin.Forms.Platform.XwtBackend
 	public abstract class ViewRenderer<TView, TNativeView> : VisualElementRenderer<TView> where TView : View where TNativeView : Widget
 	{
 		Xwt.Drawing.Color _defaultColor;
+		Canvas _container;
 
 		public TNativeView Control { get; private set; }
 
@@ -30,6 +31,18 @@ namespace Xamarin.Forms.Platform.XwtBackend
 				Control.Dispose ();
 				Control = null;
 			}
+		}
+
+		public override SizeRequest GetDesiredSize (int widthConstraint, int heightConstraint)
+		{
+			if (Control == null)
+				return (base.GetDesiredSize (widthConstraint, heightConstraint));
+
+			var view = _container == this ? (Widget) Control : _container;
+			double width = Math.Max (view.WidthRequest, widthConstraint);
+			double height = Math.Max (view.HeightRequest, heightConstraint);
+
+			return new SizeRequest (new Size (width, height), new Size (view.MinWidth, view.MinHeight));
 		}
 
 		protected override void OnElementChanged (ElementChangedEventArgs<TView> e)
@@ -72,13 +85,23 @@ namespace Xamarin.Forms.Platform.XwtBackend
 				Control.BackgroundColor = color.ToUIColor ();
 		}
 
-		protected void SetNativeControl (TNativeView widget)
+		protected void SetNativeControl (TNativeView widget, Canvas container)
 		{
 			_defaultColor = widget.BackgroundColor;
 			Control = widget;
+			_container = container;
 
-			if (Element.BackgroundColor != Color.Default)
-				SetBackgroundColor (Element.BackgroundColor);
+			//if (Element.BackgroundColor != Color.Default)
+			//	SetBackgroundColor (Element.BackgroundColor);
+
+			// FIXME: should be better way to do this...
+			this.WidthRequest = widget.WidthRequest;
+			this.HeightRequest = widget.HeightRequest;
+			this.ExpandHorizontal = widget.ExpandHorizontal;
+			this.ExpandVertical = widget.ExpandVertical;
+			this.Opacity = widget.Opacity;
+
+			AddChild (Control);
 
 			UpdateIsEnabled ();
 

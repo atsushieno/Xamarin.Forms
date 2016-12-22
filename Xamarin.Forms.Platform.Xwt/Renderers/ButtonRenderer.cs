@@ -50,7 +50,7 @@ namespace Xamarin.Forms.Platform.XwtBackend
 			if (e.OldElement == null)
 			{
 				if (Control == null) {
-					SetNativeControl (new Xwt.Button ());
+					SetNativeControl (new Xwt.Button () { WidthRequest = 80, HeightRequest = 40 }, this);
 
 					Debug.Assert (Control != null, "Control != null");
 

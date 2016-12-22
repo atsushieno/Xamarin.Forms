@@ -17,5 +17,8 @@ namespace Xamarin.Forms.Platform.XwtBackend
 
 		void SetElement (VisualElement element);
 		void UpdateLayout ();
+
+		double WidthRequest { get; set; }
+		double HeightRequest { get; set; }
 	}
 }

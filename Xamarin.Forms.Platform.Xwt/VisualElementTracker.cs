@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Drawing;
 using System.Threading;
+using Xwt;
 
 namespace Xamarin.Forms.Platform.XwtBackend
 {
@@ -76,6 +77,8 @@ namespace Xamarin.Forms.Platform.XwtBackend
 
 		void HandleSizeChanged (object sender, EventArgs e)
 		{
+			Renderer.WidthRequest = this._element.Width;
+			Renderer.HeightRequest = this._element.Height;
 			UpdateNativeControl ();
 		}
 
@@ -109,13 +112,64 @@ namespace Xamarin.Forms.Platform.XwtBackend
 
 		void UpdateNativeControl ()
 		{
-			if (_disposed)
-				return;
+			Performance.Start ();
 
-			// FIXME: implement
+			VisualElement view = Renderer.Element;
+			var widget = Renderer.Widget;
 
-			if (NativeControlUpdated != null)
-				NativeControlUpdated (this, EventArgs.Empty);
+			// #FIXME: copied from Platform.Android
+			//UpdateAnchorX ();
+			//UpdateAnchorY ();
+			UpdateIsVisible ();
+
+			if (view.IsEnabled != widget.Sensitive)
+				widget.Sensitive = view.IsEnabled;
+
+			UpdateOpacity ();
+			// #FIXME: copied from Platform.Android
+			//UpdateRotation ();
+			//UpdateRotationX ();
+			//UpdateRotationY ();
+			//UpdateScale ();
+			//UpdateTranslationX ();
+			//UpdateTranslationY ();
+
+			Performance.Stop ();
+		}
+
+		void UpdateIsVisible ()
+		{
+			VisualElement view = Renderer.Element;
+			var widget = Renderer.Widget;
+
+			if (view.IsVisible != widget.Visible)
+				widget.Visible = view.IsVisible;
+		}
+
+		public void UpdateLayout ()
+		{
+			Performance.Start ();
+
+			VisualElement view = Renderer.Element;
+			var widget = Renderer.Widget;
+
+			// ## FIXME: how do we set X and Y??
+			widget.WidthRequest = view.Width;
+//			widget.HeightRequest = view.Height;
+
+			Performance.Stop ();
+		}
+
+		void UpdateOpacity ()
+		{
+			Performance.Start ();
+
+			VisualElement view = Renderer.Element;
+			var widget = Renderer.Widget;
+
+			widget.Opacity = view.Opacity;
+
+			Performance.Stop ();
 		}
 	}
 }

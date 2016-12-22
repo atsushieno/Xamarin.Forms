@@ -47,9 +47,11 @@ namespace Xamarin.Forms.Platform.XwtBackend
 			}
 		}
 
+		/*
 		public Canvas NativeView {
 			get { return this; }
 		}
+		*/
 
 		public VisualElementTracker Tracker { get; private set; }
 
@@ -67,7 +69,10 @@ namespace Xamarin.Forms.Platform.XwtBackend
 
 		public virtual SizeRequest GetDesiredSize (int widthConstraint, int heightConstraint)
 		{
-			throw new NotImplementedException ();
+			double width = Math.Max (WidthRequest, widthConstraint);
+			double height = Math.Max (HeightRequest, heightConstraint);
+
+			return new SizeRequest (new Size (width, height), new Size (MinWidth, MinHeight));
 		}
 
 		public void RegisterEffect (Effect effect)
@@ -164,6 +169,11 @@ namespace Xamarin.Forms.Platform.XwtBackend
 			BackgroundColor = color.ToXwtColor ();
 		}
 
+		protected virtual void SetOpacity (double opacity)
+		{
+			Opacity = opacity;
+		}
+
 		protected virtual void SetAutomationId (string id)
 		{
 			//throw new NotImplementedException ();
@@ -192,7 +202,15 @@ namespace Xamarin.Forms.Platform.XwtBackend
 
 		public void UpdateLayout ()
 		{
-			throw new NotImplementedException ();
+			Performance.Start ();
+			Tracker?.UpdateLayout ();
+			Performance.Stop ();
+		}
+
+		protected override void OnReallocate ()
+		{
+			base.OnReallocate ();
+			UpdateLayout ();
 		}
 	}
 }

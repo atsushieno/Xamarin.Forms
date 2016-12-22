@@ -89,6 +89,7 @@ namespace Xamarin.Forms.Platform.XwtBackend
 
 			Performance.Start ("Add view");
 			if (!sameChildren) {
+				_renderer.Widget.AddChild (renderer.Widget);
 				_childViews.Add (renderer);
 			}
 			Performance.Stop ("Add view");

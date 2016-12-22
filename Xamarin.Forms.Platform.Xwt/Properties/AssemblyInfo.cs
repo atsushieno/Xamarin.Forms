@@ -30,4 +30,5 @@ using Xamarin.Forms;
 [assembly: Xamarin.Forms.Dependency (typeof (ResourcesProvider))]
 
 [assembly: ExportRenderer (typeof (Button), typeof (ButtonRenderer))]
+[assembly: ExportRenderer (typeof (Label), typeof (LabelRenderer))]
 [assembly: ExportRenderer (typeof (Page), typeof (PageRenderer))]

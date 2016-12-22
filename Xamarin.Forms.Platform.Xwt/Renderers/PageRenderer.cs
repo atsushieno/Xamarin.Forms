@@ -14,12 +14,14 @@ namespace Xamarin.Forms.Platform.XwtBackend
 			base.Dispose (disposing);
 		}
 
+		bool appearing_sent;
+
 		protected override void OnBoundsChanged ()
 		{
 			base.OnBoundsChanged ();
-			var pageContainer = Parent as PageContainer;
-			if (pageContainer != null && pageContainer.IsInFragment)
+			if (appearing_sent)
 				return;
+			appearing_sent = true;
 			PageController.SendAppearing ();
 		}
 
@@ -28,10 +30,12 @@ namespace Xamarin.Forms.Platform.XwtBackend
 			Page view = e.NewElement;
 			base.OnElementChanged (e);
 
+			var originalSensitive = Sensitive;
+
 			UpdateBackgroundColor (view);
 			UpdateBackgroundImage (view);
 
-			Sensitive = true;
+			Sensitive = originalSensitive;
 		}
 
 		protected override void OnElementPropertyChanged (object sender, PropertyChangedEventArgs e)

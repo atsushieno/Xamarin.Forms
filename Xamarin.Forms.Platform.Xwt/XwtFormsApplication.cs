@@ -14,7 +14,6 @@ namespace Xamarin.Forms.Platform.XwtBackend
 
 		Xamarin.Forms.Application application;
 		Platform platform;
-		Xwt.VBox layout = new Xwt.VBox ();
 
 		public XwtFormsApplication ()
 		{
@@ -26,12 +25,21 @@ namespace Xamarin.Forms.Platform.XwtBackend
 			if (application == null)
 				throw new ArgumentNullException ("application");
 
+			//## FIXME: copied from FormsActivity:
+			//(application as IApplicationController)?.SetAppIndexingProvider (new AndroidAppIndexProvider (this));
+
 			this.application = application;
 			Xamarin.Forms.Application.Current = application;
+
+			//## FIXME: copied from FormsActivity:
+			//SetSoftInputMode ();
 
 			application.PropertyChanged += AppOnPropertyChanged;
 
 			SetMainPage ();
+
+			//## FIXME: not sure if it should be called here. Internal Forms Appllication lifecycle requires this?
+			application.SendStart ();
 		}
 
 		void AppOnPropertyChanged (object sender, PropertyChangedEventArgs args)
@@ -43,12 +51,21 @@ namespace Xamarin.Forms.Platform.XwtBackend
 		void InternalSetPage (Page page)
 		{
 			if (!Forms.IsInitialized)
-				throw new InvalidOperationException ("Call Forms.Init (Activity, Bundle) before this");
+				throw new InvalidOperationException ("Call Forms.Init () before this");
 
 			if (platform != null) {
 				platform.SetPage (page);
 				return;
 			}
+
+			/* ## FIXME: copied from FormsApplicationActivity.cs
+			MessagingCenter.Subscribe (this, Page.BusySetSignalName, (Page sender, bool enabled) => {
+				busyCount = Math.Max (0, enabled ? busyCount + 1 : busyCount - 1);
+				UpdateProgressBarVisibility (busyCount > 0);
+			});
+
+			UpdateProgressBarVisibility (busyCount > 0);
+			*/
 
 			MessagingCenter.Subscribe (this, Page.AlertSignalName, (Page sender, AlertArguments arguments) => {
 				var buttons = new List<Xwt.Command> ();
@@ -59,7 +76,7 @@ namespace Xamarin.Forms.Platform.XwtBackend
 				arguments.SetResult (result == arguments.Accept);
 			});
 
-			/*
+			/* ## FIXME: copied from FormsApplicationActivity.cs
 			MessagingCenter.Subscribe (this, Page.ActionSheetSignalName, (Page sender, ActionSheetArguments arguments) => {
 				var builder = new AlertDialog.Builder (this);
 				builder.SetTitle (arguments.Title);
@@ -86,13 +103,23 @@ namespace Xamarin.Forms.Platform.XwtBackend
 			if (application != null)
 				application.Platform = platform;
 			platform.SetPage (page);
-			layout.PackStart (platform.GetWidget ());
-			this.Content = layout;
+			this.Content = platform.GetWidget ();
+
 		}
 
 		void SetMainPage ()
 		{
 			InternalSetPage (application.MainPage);
+		}
+
+		protected override void OnBoundsChanged (Xwt.BoundsChangedEventArgs a)
+		{
+			base.OnBoundsChanged (a);
+			if (Application.Current == null || Xamarin.Forms.Application.Current.MainPage == null)
+				return;
+			var width = platform.Page.Width;
+			var height = platform.Page.Height;
+			Platform.LayoutRootPage (application.MainPage, (int) width, (int) height); // FIXME: use valid size
 		}
 	}
 }

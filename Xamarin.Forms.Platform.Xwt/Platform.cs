@@ -25,18 +25,24 @@ namespace Xamarin.Forms.Platform.XwtBackend
 
 		internal Platform(XwtFormsApplication application)
 		{
-			_renderer = new PlatformRenderer(this);
-			_modals = new List<Page>();
+			XwtApplication = application;
 
-			var busyCount = 0;
-			// MessagingCenter.Subscribe(this, Page.BusySetSignalName, (Page sender, bool enabled) => ?
+			// ## FIXME: copied from Android Platform.cs
+			//_defaultActionBarTitleTextColor = SetDefaultActionBarTitleTextColor ();
 
-			// MessagingCenter.Subscribe(this, Page.AlertSignalName, (Page sender, AlertArguments arguments) => ?
+			_renderer = new PlatformRenderer (this);
+			_modals = new List<Page> ();
 
-			// MessagingCenter.Subscribe(this, Page.ActionSheetSignalName, (Page sender, ActionSheetArguments arguments) => ?
+			/* ## FIXME: copied from Android Platform.cs
+			//FormsApplicationActivity.BackPressed += HandleBackPressed;
+
+			_toolbarTracker.CollectionChanged += ToolbarTrackerOnCollectionChanged;
+			*/
 		}
 
-		Page Page { get; set; }
+		internal XwtFormsApplication XwtApplication { get; private set; }
+
+		internal Page Page { get; set; }
 
 		void IDisposable.Dispose()
 		{
@@ -136,6 +142,7 @@ namespace Xamarin.Forms.Platform.XwtBackend
 			throw new InvalidOperationException("RemovePage is not supported globally on iOS, please use a NavigationPage.");
 		}
 
+		/*
 		SizeRequest IPlatform.GetNativeSize(VisualElement view, double widthConstraint, double heightConstraint)
 		{
 			var renderView = GetRenderer(view);
@@ -144,12 +151,40 @@ namespace Xamarin.Forms.Platform.XwtBackend
 
 			return renderView.GetDesiredSize((int) widthConstraint, (int) heightConstraint);
 		}
+		*/
+
+		SizeRequest IPlatform.GetNativeSize (VisualElement view, double widthConstraint, double heightConstraint)
+		{
+			Performance.Start ();
+
+			var viewRenderer = GetRenderer (view);
+
+			// negative numbers have special meanings to xwt they don't to us
+			widthConstraint = widthConstraint <= -1 ? double.PositiveInfinity : widthConstraint;
+			heightConstraint = heightConstraint <= -1 ? double.PositiveInfinity : heightConstraint;
+
+			int width = !double.IsPositiveInfinity (widthConstraint) ? (int) widthConstraint : 0;
+			//? MeasureSpecFactory.MakeMeasureSpec ((int)widthConstraint, MeasureSpecMode.AtMost)
+			//: MeasureSpecFactory.MakeMeasureSpec (0, MeasureSpecMode.Unspecified);
+
+			int height = !double.IsPositiveInfinity (heightConstraint) ? (int) heightConstraint : 0;
+			//? MeasureSpecFactory.MakeMeasureSpec ((int)heightConstraint, MeasureSpecMode.AtMost)
+			//: MeasureSpecFactory.MakeMeasureSpec (0, MeasureSpecMode.Unspecified);
+
+			SizeRequest rawResult = viewRenderer.GetDesiredSize (width, height);
+			if (rawResult.Minimum == Size.Zero)
+				rawResult.Minimum = rawResult.Request;
+			var result = new SizeRequest (new Size (rawResult.Request.Width, rawResult.Request.Height),
+				new Size (rawResult.Minimum.Width, rawResult.Minimum.Height));
+
+			Performance.Stop ();
+			return result;
+		}
 
 		public static IVisualElementRenderer CreateRenderer(VisualElement element)
 		{
-			var t = element.GetType();
-			var renderer = Registrar.Registered.GetHandler<IVisualElementRenderer>(t) ?? new DefaultRenderer();
-			renderer.SetElement(element);
+			var renderer = Registrar.Registered.GetHandler<IVisualElementRenderer> (element.GetType ()) ?? new DefaultRenderer ();
+			renderer.SetElement (element);
 			return renderer;
 		}
 
@@ -213,19 +248,6 @@ namespace Xamarin.Forms.Platform.XwtBackend
 			rendererToRemove.Dispose();
 		}
 
-		internal void LayoutSubviews()
-		{
-			if (Page == null)
-				return;
-
-			var rootRenderer = GetRenderer(Page);
-
-			if (rootRenderer == null)
-				return;
-
-			throw new NotImplementedException ();
-		}
-
 		internal void SetPage(Page newRoot)
 		{
 			if (newRoot == null)
@@ -285,6 +307,17 @@ namespace Xamarin.Forms.Platform.XwtBackend
 			// would be safe to dismiss the VC). Fortunately this is almost never an issue
 			throw new NotImplementedException ();
 			await Task.Delay(5);
+		}
+
+		internal static void LayoutRootPage (Page page, double width, double height)
+		{
+			int statusBarHeight = 0; // ## FIXME: dummy
+
+			if (page is MasterDetailPage)
+				page.Layout (new Rectangle (0, 0, width, height));
+			else {
+				page.Layout (new Rectangle (0, statusBarHeight, width, height - statusBarHeight));
+			}
 		}
 
 		internal class DefaultRenderer : VisualElementRenderer<VisualElement>
